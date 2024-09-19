@@ -24,18 +24,27 @@ int main(int argc, char **argv) {
 		return EXIT_FAILURE;
 	}
 
+	if (args.size() == 1 && (args[0] == "--help" || args[0] == "-h")) {
+		printf("You can use the following commands with the TestItNow CLI :\n\
+\t-a             \t\tRun all tests\n\
+\t-h or --help   \t\tPrint the current table\n\
+\t-v or --version\t\tPrint informations about the version of TestItNow\n\
+\t[...tests]     \t\tA list of names of the tests you want to run\n");
+		return EXIT_SUCCESS;
+	}
+
 	if (args.size() == 1 && args[0] == "-a") {
 		for (const auto &test : tests)
 			tin::TestManager::runTest(test);
 		return EXIT_SUCCESS;
 	}
 
-	if (args.size() == 1 && args[0] == "--version") {
+	if (args.size() == 1 && (args[0] == "--version" or args[0] == "-v")) {
 		printf("Tests build with TestItNow version %d.%d.%d (%s)\n",
 			TIN_MAJOR_VERSION,
 			TIN_MINOR_VERSION,
 			TIN_PATCH_VERSION,
-			TIN_VARIANT_VERSION == 1 ? "dev" : "build"
+			TIN_VARIANT_VERSION == 1 ? "dev" : "release"
 		);
 		return EXIT_SUCCESS;
 	}

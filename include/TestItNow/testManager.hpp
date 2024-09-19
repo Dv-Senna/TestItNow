@@ -2,6 +2,7 @@
 
 #include <map>
 #include <string>
+#include <vector>
 
 #include "TestItNow/result.hpp"
 
@@ -15,6 +16,7 @@ namespace tin {
 			static void addTest(const std::string &name, TestCallback testFunc);
 			static void runTest(const std::string &testName);
 			static void cleanup();
+			static std::vector<std::string> getTests();
 
 		private:
 			TestManager();

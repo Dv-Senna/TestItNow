@@ -21,6 +21,8 @@ namespace tin {
 		if (test == s_tests->end())
 			return tin::print<tin::Severity::eWarning> ("Can't find test '{}'", testName);
 
+		tin::print("Running test '{}'", testName);
+
 		tin::Result result {test->second()};
 		if (result != tin::Result::ePassed)
 			return tin::print<tin::Severity::eFailure> ("Test '{}' failed with code {}", testName, (uint32_t)result);
@@ -32,6 +34,15 @@ namespace tin {
 	void TestManager::cleanup() {
 		if (s_tests != nullptr)
 			delete s_tests;
+	}
+
+
+	std::vector<std::string> TestManager::getTests() {
+		std::vector<std::string> output {};
+		output.reserve(s_tests->size());
+		for (const auto &test : *s_tests)
+			output.push_back(test.first);
+		return output;
 	}
 
 

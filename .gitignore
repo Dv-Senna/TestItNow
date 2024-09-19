@@ -37,3 +37,6 @@ build/*
 # Scripts
 *.bat
 *.sh
+
+# .vscode
+.vscode/*

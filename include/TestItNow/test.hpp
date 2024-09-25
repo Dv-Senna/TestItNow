@@ -24,23 +24,23 @@ namespace tin {
 	return tin::Result::ePassed;\
 	}; tin::Test name##_testObject {#name, name##_testFunc};
 
-#define TIN_CHECK(cond) __tin_testCount++;\
-	if (!!(cond)) {__tin_successCount++;}\
-	else {tin::print<tin::Severity::eFailure> ("\tCheck failed in " __FILE__ ":{} > " #cond, __LINE__);}
+#define TIN_CHECK(...) __tin_testCount++;\
+	if (!!(__VA_ARGS__)) {__tin_successCount++;}\
+	else {tin::print<tin::Severity::eFailure> ("\tCheck failed in " __FILE__ ":{} > " #__VA_ARGS__, __LINE__);}
 
-#define TIN_NAMED_CHECK(name, cond) __tin_testCount++;\
-	if (!!(cond)) {__tin_successCount++;}\
+#define TIN_NAMED_CHECK(name, ...) __tin_testCount++;\
+	if (!!(__VA_ARGS__)) {__tin_successCount++;}\
 	else {tin::print<tin::Severity::eFailure> ("\tCheck '" name "' failed");}
 
-#define TIN_MANDATORY_CHECK(cond) __tin_testCount++;\
-	if (!!(cond)) {__tin_successCount++;}\
+#define TIN_MANDATORY_CHECK(...) __tin_testCount++;\
+	if (!!(__VA_ARGS__)) {__tin_successCount++;}\
 	else {\
-		tin::print<tin::Severity::eFailure> ("\tMandatory check failed in " __FILE__ ":{} > " #cond, __LINE__);\
+		tin::print<tin::Severity::eFailure> ("\tMandatory check failed in " __FILE__ ":{} > " #__VA_ARGS__, __LINE__);\
 		return tin::Result::eFailed;\
 	}
 
-#define TIN_NAMED_MANDATORY_CHECK(name, cond) __tin_testCount++;\
-	if (!!(cond)) {__tin_successCount++;}\
+#define TIN_NAMED_MANDATORY_CHECK(name, ...) __tin_testCount++;\
+	if (!!(__VA_ARGS__)) {__tin_successCount++;}\
 	else {\
 		tin::print<tin::Severity::eFailure> ("\tMandatory check '" name "' failed");\
 		return tin::Result::eFailed;\

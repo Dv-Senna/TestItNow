@@ -7,10 +7,6 @@
 #include "TestItNow/testManager.hpp"
 
 
-tin::Result test1() {
-	return tin::Result::ePassed;
-};
-
 
 int main(int argc, char **argv) {
 	std::vector<std::string> args {};
@@ -25,11 +21,11 @@ int main(int argc, char **argv) {
 	}
 
 	if (args.size() == 1 && (args[0] == "--help" || args[0] == "-h")) {
-		printf("You can use the following commands with the TestItNow CLI :\n\
+		tin::print("You can use the following commands with the TestItNow CLI :\n\
 \t-a             \t\tRun all tests\n\
 \t-h or --help   \t\tPrint the current table\n\
 \t-v or --version\t\tPrint informations about the version of TestItNow\n\
-\t[...tests]     \t\tA list of names of the tests you want to run\n");
+\t[...tests]     \t\tA list of names of the tests you want to run");
 		return EXIT_SUCCESS;
 	}
 
@@ -40,7 +36,7 @@ int main(int argc, char **argv) {
 	}
 
 	if (args.size() == 1 && (args[0] == "--version" or args[0] == "-v")) {
-		printf("Tests build with TestItNow version %d.%d.%d (%s)\n",
+		tin::print("Tests build with TestItNow version %d.%d.%d (%s)",
 			TIN_MAJOR_VERSION,
 			TIN_MINOR_VERSION,
 			TIN_PATCH_VERSION,

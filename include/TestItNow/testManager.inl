@@ -19,15 +19,15 @@ namespace tin {
 	void TestManager::runTest(const std::string &testName) {
 		auto test {s_tests->find(testName)};
 		if (test == s_tests->end())
-			return tin::print<tin::Severity::eWarning> ("Can't find test '{}'", testName);
+			return tin::print<tin::Severity::eWarning> ("Can't find test '%s'", testName.c_str());
 
-		tin::print("Running test '{}'", testName);
+		tin::print("Running test '%s'", testName.c_str());
 
 		tin::Result result {test->second()};
 		if (result != tin::Result::ePassed)
-			return tin::print<tin::Severity::eFailure> ("Test '{}' failed with code {}", testName, (uint32_t)result);
+			return tin::print<tin::Severity::eFailure> ("Test '%s' failed with code %u", testName.c_str(), (uint32_t)result);
 
-		tin::print<tin::Severity::eSuccess> ("Test '{}' passed", testName);
+		tin::print<tin::Severity::eSuccess> ("Test '%s' passed", testName.c_str());
 	}
 
 

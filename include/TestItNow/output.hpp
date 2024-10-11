@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string_view>
+#include <string>
 
 
 
@@ -12,8 +12,8 @@ namespace tin {
 		eWarning
 	};
 
-	template <tin::Severity severity = tin::Severity::eNormal, typename ...Args>
-	void print(std::string_view message, Args&& ...args);
+	template <tin::Severity severity = tin::Severity::eNormal>
+	void print(const std::string &message, ...);
 
 } // namespace tin
 

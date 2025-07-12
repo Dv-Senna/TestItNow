@@ -7,7 +7,7 @@ A C++ header-only unit testing library.
 
 ## Why ?
 Why an other testing framework when we have a dozen different already well established.
-Beacause I wanted a small testing suite, that can be integrated into any project really
+Because I wanted a small testing suite, that can be integrated into any project really
 easily. This is accomplished with the header-only nature of TestItNow and its minimal
 interface.
 

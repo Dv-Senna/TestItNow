@@ -37,6 +37,12 @@ build/*
 # Scripts
 *.bat
 *.sh
+*.ps1
 
-# .vscode
+# IDEs
 .vscode/*
+.clang/*
+.clangd
+
+# cmake
+__cmake_systeminformation/*

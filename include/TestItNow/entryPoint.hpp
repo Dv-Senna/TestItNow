@@ -5,6 +5,8 @@
 
 #include <CLIser/CLIser.hpp>
 
+#include "TestItNow/test.hpp"
+
 
 namespace TestItNow {
 	struct [[
@@ -32,8 +34,21 @@ auto main(int argc, char** argv) -> int {
 	}
 	auto commandLineArguments {std::move(*commandLineArgumentsWithError)};
 
+	for (const TestItNow::Test& test : TestItNow::getTestList()) {
+		std::println("Running test {} with tags {}", test.getName(), test.getTags());
+		auto testResult {test.run()};
+		if (!testResult)
+			std::println(stderr, "Test failed : {}", testResult.error().message);
+	}
+
 	std::println("Hello");
 	std::println("All : {}", commandLineArguments.runAll);
 	std::println("Tests : {}", parser.getUnnamedArgs());
 	return EXIT_SUCCESS;
+}
+
+
+auto TestItNow::getTestList() noexcept -> std::vector<TestItNow::Test>& {
+	static std::vector<TestItNow::Test> testList {};
+	return testList;
 }

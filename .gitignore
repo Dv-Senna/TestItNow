@@ -41,7 +41,7 @@ build/*
 
 # IDEs
 .vscode/*
-.clang/*
+.cache/*
 .clangd
 
 # cmake

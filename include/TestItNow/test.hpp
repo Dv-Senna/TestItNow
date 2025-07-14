@@ -3,7 +3,6 @@
 #include <exception>
 #include <expected>
 #include <format>
-#include <memory>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -24,8 +23,6 @@ namespace TestItNow {
 		Test() = delete;
 		Test(const Test&) = delete;
 		auto operator=(const Test&) -> Test& = delete;
-		Test(Test&&) = delete;
-		auto operator=(Test&&) -> Test& = delete;
 
 		public:
 			using Callback = TestResult(*)();
@@ -35,6 +32,8 @@ namespace TestItNow {
 				m_tags {std::move(tags)},
 				m_callback {std::forward<Callback> (callback)}
 			{}
+			inline Test(Test&&) noexcept = default;
+			inline auto operator=(Test&&) noexcept -> Test& = default;
 			~Test() = default;
 
 			inline auto run() const noexcept -> TestResult {
@@ -64,5 +63,5 @@ namespace TestItNow {
 	};
 
 
-	auto getTestList() noexcept -> std::vector<std::unique_ptr<Test>>&;
+	auto getTestList() noexcept -> std::vector<Test>&;
 }

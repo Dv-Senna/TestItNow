@@ -4,12 +4,12 @@
 #include <TestItNow/testRegister.hpp>
 
 
-namespace tests {
-	[[=TestItNow::Test("test3"), =TestItNow::Tags("tag1")]]
-	auto testBody3() -> TestItNow::TestResult {
-		std::println("Test2 body");
-		return {};
-	};
+TestItNow_NEW_TEST(test3, "tag1") {
+	std::println("Test3 body");
+	return {};
 }
 
-static TestItNow::TestRegister<^^tests> _3 {__FILE__};
+TestItNow_NEW_TEST(test3_2) {
+	std::println("Test3_2 body");
+	return {};
+}

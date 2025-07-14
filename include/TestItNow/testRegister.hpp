@@ -83,7 +83,7 @@ namespace TestItNow {
 
 		struct TagsBaseProxy {
 			consteval auto operator()(auto& ...values) const noexcept {
-				std::vector staticValues {std::define_static_string(values)...};
+				std::vector<const char*> staticValues {std::define_static_string(values)...};
 				return TagsBase{.values = std::define_static_array(staticValues)};
 			};
 		};
@@ -123,17 +123,35 @@ namespace TestItNow {
 	}
 
 
-	template <std::meta::info Namespace>
+	template <std::meta::info func>
 	struct TestRegister {
-		inline TestRegister(std::string_view file) {
-			constexpr auto ctx {std::meta::access_context::current()};
-			template for (constexpr auto member : std::define_static_array(members_of(Namespace, ctx))) {
-				if constexpr (internals::hasAnnotation<member, annotations::TestBase> ()) {
-					std::println("member {} in {}", display_string_of(member), file);
-					constexpr internals::TestInfos testInfos {internals::getTestInfos<member> ()};
-					std::println("Test infos of {} in {} : {} {}", identifier_of(member), file, testInfos.name, testInfos.tags);
-				}
+		static consteval auto checkFunction() -> void {
+			if constexpr (!is_function(func))
+				throw "Can't register test that is not a function";
+		}
+
+		inline TestRegister() {
+			checkFunction();
+			if constexpr (internals::hasAnnotation<func, annotations::TestBase> ()) {
+				constexpr internals::TestInfos testInfos {internals::getTestInfos<func> ()};
+				TestItNow::getTestList().emplace_back(
+					testInfos.name,
+					testInfos.tags
+						| std::views::transform([](auto str) {return std::string_view{str};})
+						| std::ranges::to<std::vector> (),
+					&[:func:]
+				);
 			}
 		}
 	};
 }
+
+#ifdef TestItNow_NEW_TEST
+	#error Macro TestItNow_NEW_TEST must be undefined because TestItNow defines it
+	#include <stop_include>
+#endif
+#define TestItNow_NEW_TEST(name, ...) [[=::TestItNow::Test(#name), =::TestItNow::Tags(__VA_ARGS__)]] \
+	auto TestItNow_test_##name##body() -> ::TestItNow::TestResult; \
+	[[maybe_unused]] \
+	static ::TestItNow::TestRegister<^^TestItNow_test_##name##body> TestItNow_register_##name {}; \
+	auto TestItNow_test_##name##body() -> ::TestItNow::TestResult

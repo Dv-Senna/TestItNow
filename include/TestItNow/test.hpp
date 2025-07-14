@@ -3,6 +3,7 @@
 #include <exception>
 #include <expected>
 #include <format>
+#include <memory>
 #include <string_view>
 #include <type_traits>
 #include <vector>
@@ -63,5 +64,5 @@ namespace TestItNow {
 	};
 
 
-	auto getTestList() noexcept -> std::vector<Test>&;
+	auto getTestList() noexcept -> std::vector<std::unique_ptr<Test>>&;
 }

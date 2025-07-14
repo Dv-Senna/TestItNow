@@ -34,9 +34,9 @@ auto main(int argc, char** argv) -> int {
 	}
 	auto commandLineArguments {std::move(*commandLineArgumentsWithError)};
 
-	for (const TestItNow::Test& test : TestItNow::getTestList()) {
-		std::println("Running test {} with tags {}", test.getName(), test.getTags());
-		auto testResult {test.run()};
+	for (const auto& test : TestItNow::getTestList()) {
+		std::println("Running test {} with tags {}", test->getName(), test->getTags());
+		auto testResult {test->run()};
 		if (!testResult)
 			std::println(stderr, "Test failed : {}", testResult.error().message);
 	}
@@ -48,7 +48,7 @@ auto main(int argc, char** argv) -> int {
 }
 
 
-auto TestItNow::getTestList() noexcept -> std::vector<TestItNow::Test>& {
-	static std::vector<TestItNow::Test> testList {};
+auto TestItNow::getTestList() noexcept -> std::vector<std::unique_ptr<TestItNow::Test>>& {
+	static std::vector<std::unique_ptr<TestItNow::Test>> testList {};
 	return testList;
 }

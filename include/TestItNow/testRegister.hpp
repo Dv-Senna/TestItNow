@@ -1,6 +1,7 @@
 #pragma once
 
 #include <meta>
+#include <optional>
 #include <ranges>
 #include <type_traits>
 #include <utility>
@@ -10,108 +11,129 @@
 
 namespace TestItNow {
 	namespace internals {
-		template <typename ...Ts>
-		struct StructuralTuple;
+		template <typename T>
+		struct StructuralSpan {
+			T* m_begin;
+			T* m_end;
 
-		template <typename First, typename ...Tails>
-		struct StructuralTuple<First, Tails...> : public StructuralTuple<Tails...> {
-			First data;
+			using This = StructuralSpan<T>;
+			constexpr StructuralSpan() noexcept = default;
+			constexpr StructuralSpan(const This&) noexcept = default;
+			constexpr auto operator=(const This&) noexcept -> This& = default;
+			constexpr StructuralSpan(This&&) noexcept = default;
+			constexpr auto operator=(This&&) noexcept -> This& = default;
+
+			constexpr StructuralSpan(T* begin, T* end) noexcept :
+				m_begin {begin},
+				m_end {end}
+			{}
+			constexpr StructuralSpan(std::span<T> span) noexcept :
+				m_begin {span.data()},
+				m_end {span.data() + span.size()}
+			{}
+
+			explicit constexpr operator std::span<T> () const noexcept {
+				return std::span{m_begin, m_end};
+			}
 		};
 
-		template <>
-		struct StructuralTuple<> {};
 
-
-		template <std::size_t I, typename ...Ts>
-		requires (I < sizeof...(Ts))
-		constexpr auto getFromStructuralTuple(StructuralTuple<Ts...>& tuple) noexcept {
-			constexpr auto implementation {[] <std::size_t J = 0, typename First, typename ...Tails> (
-				this const auto& implementation,
-				StructuralTuple<First, Tails...>& tuple
-			) {
-				if constexpr (J == I)
-					return tuple.StructuralTuple<First, Tails...>::data;
-				else
-					return implementation.template operator() <J + 1, Tails...> (tuple);
-			}};
-			return implementation(tuple);
+		template <std::meta::info r, typename T>
+		consteval auto hasAnnotation() -> bool {
+			std::size_t count {0};
+			template for (constexpr auto a : std::define_static_array(annotations_of(r))) {
+				if constexpr (type_of(a) == ^^T)
+					++count;
+			}
+			if (count > 1)
+				throw "Can't have multiple instance of the same annotation";
+			return count == 1;
 		}
 
-
-		template <typename T>
-		struct extract_fixed_size_string_size;
-
-		template <std::integral auto N>
-		struct extract_fixed_size_string_size<const char[N]> {
-			static constexpr auto value {static_cast<std::size_t> (N)};
-		};
-
-		template <std::integral auto N>
-		struct extract_fixed_size_string_size<const char(&)[N]> {
-			static constexpr auto value {static_cast<std::size_t> (N)};
-		};
-
-
-		template <std::size_t... Ns>
-		struct StringAnnotation {
-			StructuralTuple<char[Ns]...> strings;
-		};
-
-		template <std::size_t N>
-		struct StringAnnotation<N> {
-			char string[N];
-		};
-
-		template <>
-		struct StringAnnotation<> {};
-
-		template <>
-		struct StringAnnotation<0uz> {};
-
-		template <template <std::size_t...> typename ToBuild, bool allowMultiple, bool allowNone>
-		struct StringAnnotationProxy {
-			consteval auto operator()() const noexcept requires (allowNone) {
-				return ToBuild<0uz> {};
+		template <std::meta::info r, typename T>
+		consteval auto getAnnotation() {
+			template for (constexpr auto a : std::define_static_array(annotations_of(r))) {
+				using AnnotationType = [:type_of(a):];
+				if constexpr (type_of(a) == ^^T)
+					return extract<AnnotationType> (a);
 			}
+			throw "Can't get annotation that is not present on reflection";
+		}
+	}
+
+
+	namespace annotations {
+		struct TestBase {
+			bool hasValue;
+			const char* value;
 
 			template <std::size_t N>
 			consteval auto operator()(const char (&value)[N]) const noexcept {
-				ToBuild<N> result {};
-				for (const auto i : std::views::iota(0uz, N))
-					result.string[i] = value[i];
-				return result;
-			}
-
-			consteval auto operator()(auto&... values) const noexcept requires (allowMultiple) {
-				ToBuild<extract_fixed_size_string_size<decltype(values)>::value...> result {};
-				template for (constexpr auto i : std::define_static_array(
-					std::views::iota(0uz, sizeof...(values))
-				)) {
-					for (const auto j : std::views::iota(
-						0uz, std::get<i> (std::tuple{extract_fixed_size_string_size<decltype(values)>::value...})
-					))
-						getFromStructuralTuple<i> (result.strings)[j] = (values...[i])[j];
-				}
-				return result;
+				return TestBase{
+					.hasValue = true,
+					.value = std::define_static_string(value)
+				};
 			}
 		};
 
-		static_assert(std::same_as<
-			decltype(std::declval<StringAnnotationProxy<StringAnnotation, true, true>> ()("hi", "hoo", "hum?")),
-			StringAnnotation<3uz, 4uz, 5uz>
-		>);
+
+		struct TagsBase {
+			internals::StructuralSpan<const char* const> values;
+		};
+
+		struct TagsBaseProxy {
+			consteval auto operator()(auto& ...values) const noexcept {
+				std::vector staticValues {std::define_static_string(values)...};
+				return TagsBase{.values = std::define_static_array(staticValues)};
+			};
+		};
 	}
 
-	namespace annotations {
-		template <std::size_t N>
-		struct TestType : internals::StringAnnotation<N> {};
-		struct TestTypeProxy : internals::StringAnnotationProxy<TestType, false, true> {};
+	constexpr annotations::TestBase Test {.hasValue = false, .value = nullptr};
+	constexpr annotations::TagsBaseProxy Tags {};
 
-		template <std::size_t ...Ns>
-		struct TagsType : internals::StringAnnotation<Ns...> {};
-		struct TagsTypeProxy : internals::StringAnnotationProxy<TagsType, true, true> {};
+
+
+	namespace internals {
+		struct TestInfos {
+			std::string_view name;
+			std::span<const char* const> tags;
+			//std::span<const char* const> tags;
+		};
+
+		template <std::meta::info f>
+		consteval auto getTestInfos() -> TestInfos {
+			if constexpr (!is_function(f))
+				throw "Can't apply Test annotation to non-function";
+
+			TestInfos result {};
+			constexpr auto test {getAnnotation<f, annotations::TestBase> ()};
+			if constexpr (!test.hasValue)
+				result.name = std::string_view{identifier_of(f)};
+			else
+				result.name = std::string_view{test.value};
+
+			if constexpr (hasAnnotation<f, annotations::TagsBase> ()) {
+				static constexpr auto tags {getAnnotation<f, annotations::TagsBase> ()};
+				result.tags = static_cast<std::span<const char* const>> (tags.values);
+			}
+
+			return result;
+		}
 	}
 
-	constexpr annotations::TestTypeProxy Test {};
-	constexpr annotations::TagsTypeProxy Tags {};
+
+	template <std::meta::info Namespace>
+	struct TestRegister {
+		inline TestRegister(std::string_view file) {
+			constexpr auto ctx {std::meta::access_context::current()};
+			template for (constexpr auto member : std::define_static_array(members_of(Namespace, ctx))) {
+				if constexpr (internals::hasAnnotation<member, annotations::TestBase> ()) {
+					std::println("member {} in {}", display_string_of(member), file);
+					constexpr internals::TestInfos testInfos {internals::getTestInfos<member> ()};
+					std::println("Test infos of {} in {} : {} {}", identifier_of(member), file, testInfos.name, testInfos.tags);
+				}
+			}
+		}
+	};
 }

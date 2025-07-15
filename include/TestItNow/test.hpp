@@ -14,6 +14,13 @@ namespace TestItNow {
 	};
 	using TestResult = std::expected<void, TestFailureInfos>;
 
+	struct TestState {
+		struct {
+			std::uint32_t successCount;
+			TestResult result {};
+		} internals;
+	};
+
 	template <typename T>
 	concept test_callback = std::invocable<std::remove_cvref_t<T>>
 		&& std::same_as<std::invoke_result_t<std::remove_cvref_t<T>>, TestResult>;
@@ -25,7 +32,7 @@ namespace TestItNow {
 		auto operator=(const Test&) -> Test& = delete;
 
 		public:
-			using Callback = TestResult(*)();
+			using Callback = void(*)(TestState&);
 
 			inline Test(std::string_view name, std::vector<std::string_view>&& tags, Callback callback) noexcept :
 				m_name {name},
@@ -36,20 +43,25 @@ namespace TestItNow {
 			inline auto operator=(Test&&) noexcept -> Test& = default;
 			~Test() = default;
 
-			inline auto run() const noexcept -> TestResult {
+			inline auto run() const noexcept -> std::expected<std::string, std::string> {
 				try {
-					return m_callback();
+					TestState state {};
+					m_callback(state);
+					if (!state.internals.result)
+						return std::unexpected{state.internals.result.error().message};
+					if (state.internals.successCount == 0)
+						return std::format("\033[33mYour test seems to be empty\033[m");
+					std::string output {std::format("\033[32m{} tests succeeded\033[m", state.internals.successCount)};
+					return output;
 				}
 				catch (std::exception &exception) {
-					return std::unexpected(TestFailureInfos{std::format("Uncaught exception thrown in test {} : {}",
+					return std::unexpected(std::format("Uncaught exception thrown in test {} : {}",
 						m_name,
 						exception.what()
-					)});
+					));
 				}
 				catch (...) {
-					return std::unexpected(TestFailureInfos{
-						std::format("Uncaught and unknown exception thrown in test {}", m_name)
-					});
+					return std::unexpected(std::format("Uncaught and unknown exception thrown in test {}", m_name));
 				}
 			}
 

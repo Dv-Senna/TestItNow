@@ -1,5 +1,6 @@
 #pragma once
 
+#include <expected>
 #include <format>
 #include <print>
 #include <sstream>
@@ -99,6 +100,11 @@ namespace TestItNow::internals {
 		auto TestItNow_exprResult_##__LINE__ {::TestItNow::internals::ExpressionDestructor{ \
 			::TestItNow::internals::ExpressionInfos{#__VA_ARGS__, __FILE__, __LINE__} \
 		} < __VA_ARGS__}; \
-		if (!TestItNow_exprResult_##__LINE__) \
-			return ::std::unexpected(::TestItNow::TestFailureInfos{TestItNow_exprResult_##__LINE__.error()}); \
+		if (!TestItNow_exprResult_##__LINE__) { \
+			TestItNow_state.internals.result = ::std::unexpected( \
+				::TestItNow::TestFailureInfos{TestItNow_exprResult_##__LINE__.error()} \
+			); \
+			return; \
+		} \
+		++TestItNow_state.internals.successCount; \
 	} while (false)

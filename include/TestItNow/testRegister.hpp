@@ -10,11 +10,10 @@
 
 
 namespace TestItNow {
-	template <TestItNow::TestResult (*Func)()>
 	struct TestRegister {
-		inline TestRegister(std::string_view name, auto... rawTags) {
+		inline TestRegister(TestItNow::Test::Callback func, std::string_view name, auto... rawTags) {
 			std::vector<std::string_view> tags {rawTags...};
-			TestItNow::getTestList().emplace_back(name, std::move(tags), Func);
+			TestItNow::getTestList().emplace_back(name, std::move(tags), func);
 		}
 	};
 }
@@ -23,9 +22,9 @@ namespace TestItNow {
 	#error Macro TestItNow_NEW_TEST must be undefined because TestItNow defines it
 	#include <stop_include>
 #endif
-#define TestItNow_NEW_TEST(name, ...) auto TestItNow_test_##name##body() -> ::TestItNow::TestResult; \
+#define TestItNow_NEW_TEST(name, ...) auto TestItNow_test_##name##body(TestItNow::TestState&) -> void; \
 	[[maybe_unused]] \
-	static ::TestItNow::TestRegister<&TestItNow_test_##name##body> TestItNow_register_##name { \
-		#name, __VA_ARGS__ \
+	static ::TestItNow::TestRegister TestItNow_register_##name { \
+		&TestItNow_test_##name##body, #name, __VA_ARGS__ \
 	}; \
-	auto TestItNow_test_##name##body() -> ::TestItNow::TestResult
+	auto TestItNow_test_##name##body(TestItNow::TestState& TestItNow_state) -> void

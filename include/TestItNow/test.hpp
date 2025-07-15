@@ -9,10 +9,10 @@
 
 
 namespace TestItNow {
-	struct TestFailureInfo {
+	struct TestFailureInfos {
 		std::string message;
 	};
-	using TestResult = std::expected<void, TestFailureInfo>;
+	using TestResult = std::expected<void, TestFailureInfos>;
 
 	template <typename T>
 	concept test_callback = std::invocable<std::remove_cvref_t<T>>
@@ -41,13 +41,13 @@ namespace TestItNow {
 					return m_callback();
 				}
 				catch (std::exception &exception) {
-					return std::unexpected(TestFailureInfo{std::format("Uncaught exception thrown in test {} : {}",
+					return std::unexpected(TestFailureInfos{std::format("Uncaught exception thrown in test {} : {}",
 						m_name,
 						exception.what()
 					)});
 				}
 				catch (...) {
-					return std::unexpected(TestFailureInfo{
+					return std::unexpected(TestFailureInfos{
 						std::format("Uncaught and unknown exception thrown in test {}", m_name)
 					});
 				}

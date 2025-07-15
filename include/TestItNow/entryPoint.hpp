@@ -42,7 +42,7 @@ auto main(int argc, char** argv) -> int {
 		std::println("Running test {} with tags {}", test.getName(), test.getTags());
 		TestItNow::TestResult testResult {test.run()};
 		if (!testResult)
-			std::println(stderr, "Test failed : {}", testResult.error().message);
+			std::println(stderr, "\033[31mTest failed : {}\033[m", testResult.error().message);
 	}
 
 	std::println("All : {}", commandLineArguments.runAll);

@@ -5,7 +5,7 @@ project(TestItNow
 	LANGUAGES CXX
 )
 
-find_package(CLIser 0.1 REQUIRED COMPONENTS DEVEL)
+find_package(CLIser 0.2 REQUIRED COMPONENTS DEVEL)
 
 add_library(TestItNow INTERFACE)
 add_library(TestItNow::TestItNow ALIAS TestItNow)

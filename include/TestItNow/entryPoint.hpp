@@ -1,5 +1,6 @@
 #pragma once
 
+#include <CLIser/argsConfig.hpp>
 #include <cstdlib>
 #include <print>
 
@@ -12,7 +13,8 @@ namespace TestItNow {
 	struct [[
 		=CLIser::Help,
 		=CLIser::Name("TestItNow"),
-		=CLIser::Version(TestItNow_VERSION)
+		=CLIser::Version(TestItNow_VERSION),
+		=CLIser::FatalUnknown
 	]] CommandLineArguments {
 		[[=CLIser::Short("a"), =CLIser::Long("all"), =CLIser::Description("Run all the tests")]]
 		bool runAll;
@@ -32,7 +34,9 @@ auto main(int argc, char** argv) -> int {
 		std::println(stderr, "CLIser can't parse given argument : {}", commandLineArgumentsWithError.error());
 		return EXIT_FAILURE;
 	}
-	auto commandLineArguments {std::move(*commandLineArgumentsWithError)};
+	if (!*commandLineArgumentsWithError)
+		return EXIT_SUCCESS;
+	auto commandLineArguments {std::move(**commandLineArgumentsWithError)};
 
 	for (const auto& test : TestItNow::getTestList()) {
 		std::println("Running test {} with tags {}", test.getName(), test.getTags());

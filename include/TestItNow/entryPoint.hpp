@@ -51,7 +51,7 @@ auto main(int argc, char** argv) -> int {
 	}
 	if (!*commandLineArgumentsWithError)
 		return EXIT_SUCCESS;
-	auto commandLineArguments {std::move(**commandLineArgumentsWithError)};
+	TestItNow::CommandLineArguments commandLineArguments {std::move(**commandLineArgumentsWithError)};
 
 	std::vector<TestItNow::Test> testsToRun {};
 	if (commandLineArguments.runAll)
@@ -91,8 +91,11 @@ auto main(int argc, char** argv) -> int {
 		std::println("\033[36m===============================\033[m");
 		std::expected testResult {test.run(randomSeed)};
 		TestItNow::Janitor _ {[](){std::println("\033[90m-------------------------------\033[m");}};
-		if (!testResult)
+		if (!testResult) {
 			std::println(stderr, "\033[31mFailure: {}\033[m", testResult.error());
+			if (!commandLineArguments.continueTestingOnFailure)
+				return EXIT_SUCCESS;
+		}
 		else
 			std::println("{}", *testResult);
 	}

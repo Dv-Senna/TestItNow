@@ -15,6 +15,7 @@ namespace TestItNow {
 	using TestResult = std::expected<void, TestFailureInfos>;
 
 	struct TestState {
+		const std::uint32_t randomSeed;
 		struct {
 			std::uint32_t successCount;
 			TestResult result {};
@@ -43,9 +44,12 @@ namespace TestItNow {
 			inline auto operator=(Test&&) noexcept -> Test& = default;
 			~Test() = default;
 
-			inline auto run() const noexcept -> std::expected<std::string, std::string> {
+			inline auto run(std::uint32_t randomSeed) const noexcept -> std::expected<std::string, std::string> {
 				try {
-					TestState state {};
+					TestState state {
+						.randomSeed = randomSeed,
+						.internals = {}
+					};
 					m_callback(state);
 					if (!state.internals.result)
 						return std::unexpected{state.internals.result.error().message};

@@ -1,8 +1,9 @@
 #pragma once
 
-#include <CLIser/argsConfig.hpp>
 #include <cstdlib>
+#include <optional>
 #include <print>
+#include <random>
 
 #include <CLIser/CLIser.hpp>
 
@@ -20,6 +21,8 @@ namespace TestItNow {
 		bool runAll;
 		[[=CLIser::Long("continue-on-failure"), =CLIser::Description("Run the next tests, even if one failed")]]
 		bool continueTestingOnFailure;
+		[[=CLIser::Long("seed"), =CLIser::Description("Set the random seed manually. Usefull to retest some values")]]
+		std::optional<std::uint32_t> randomSeed;
 	};
 }
 
@@ -65,10 +68,18 @@ auto main(int argc, char** argv) -> int {
 	if (testsToRun.empty())
 		return std::println("Error: you must run some valid tests"), EXIT_FAILURE;
 
+	const std::uint32_t randomSeed {[&commandLineArguments]() {
+		if (commandLineArguments.randomSeed)
+			return *commandLineArguments.randomSeed;
+		std::random_device device {};
+		return device();
+	} ()};
+	std::println("\033[90mRandom seed used \033[1;90m{}\033[m", randomSeed);
+
 	for (const auto& test : testsToRun) {
-		std::println("\033[36mRunning test '{}'\033[m", test.getName());
+		std::println("\033[36mRunning test '\033[1;36m{}\033[36m'\033[m", test.getName());
 		std::println("\033[36m===============================\033[m");
-		std::expected testResult {test.run()};
+		std::expected testResult {test.run(randomSeed)};
 		if (!testResult)
 			std::println(stderr, "\033[31mFailure: {}\033[m", testResult.error());
 		else

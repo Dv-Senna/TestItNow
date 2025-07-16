@@ -3,28 +3,23 @@
 #include <exception>
 #include <expected>
 #include <format>
+#include <ranges>
+#include <sstream>
 #include <string_view>
 #include <type_traits>
 #include <vector>
 
 
 namespace TestItNow {
-	struct TestFailureInfos {
-		std::string message;
-	};
-	using TestResult = std::expected<void, TestFailureInfos>;
-
 	struct TestState {
 		const std::uint32_t randomSeed;
 		struct {
 			std::uint32_t successCount;
-			TestResult result {};
+			std::uint32_t testCount;
+			std::vector<std::string> errors {};
+			bool requirementNotFullfilled;
 		} internals;
 	};
-
-	template <typename T>
-	concept test_callback = std::invocable<std::remove_cvref_t<T>>
-		&& std::same_as<std::invoke_result_t<std::remove_cvref_t<T>>, TestResult>;
 
 
 	class Test final {
@@ -51,11 +46,29 @@ namespace TestItNow {
 						.internals = {}
 					};
 					m_callback(state);
-					if (!state.internals.result)
-						return std::unexpected{state.internals.result.error().message};
-					if (state.internals.successCount == 0)
+
+					if (state.internals.testCount == 0)
 						return std::format("\033[33mYour test seems to be empty\033[m");
-					std::string output {std::format("\033[32m{} tests succeeded\033[m", state.internals.successCount)};
+
+					if (state.internals.testCount != state.internals.successCount) {
+						std::ostringstream stream {};
+						for (std::string_view delim {""}; const auto& str : state.internals.errors) {
+							stream << delim << str;
+							delim = "\n\t";
+						}
+						if (!state.internals.requirementNotFullfilled) {
+							stream << std::format("\n{}/{} tests succeeded",
+								state.internals.successCount,
+								state.internals.testCount
+							);
+						}
+						return std::unexpected{stream.str()};
+					}
+
+					std::string output {std::format("\033[32m{}/{} tests succeeded\033[m",
+						state.internals.successCount,
+						state.internals.testCount
+					)};
 					return output;
 				}
 				catch (std::exception &exception) {

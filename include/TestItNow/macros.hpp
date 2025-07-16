@@ -92,19 +92,38 @@ namespace TestItNow::internals {
 }
 
 
+#ifdef TestItNow_DESTRUCT_EXPR
+	#error Macro TestItNow_DESTRUCT_EXPR is used by TestItNow. It must not be defined
+	#include <stop_compilation>
+#endif
+#define TestItNow_DESTRUCT_EXPR(...) (::TestItNow::internals::ExpressionDestructor{ \
+		::TestItNow::internals::ExpressionInfos{#__VA_ARGS__, __FILE__, __LINE__} \
+	} < __VA_ARGS__)
+
 #ifdef TestItNow_REQUIRES
 	#error Macro TestItNow_REQUIRES is used by TestItNow. It must not be defined
 	#include <stop_compilation>
 #endif
-#define TestItNow_REQUIRES(...) do {\
-		auto TestItNow_exprResult_##__LINE__ {::TestItNow::internals::ExpressionDestructor{ \
-			::TestItNow::internals::ExpressionInfos{#__VA_ARGS__, __FILE__, __LINE__} \
-		} < __VA_ARGS__}; \
+#define TestItNow_REQUIRES(...) do { \
+		++TestItNow_state.internals.testCount; \
+		auto TestItNow_exprResult_##__LINE__ {TestItNow_DESTRUCT_EXPR(__VA_ARGS__)}; \
 		if (!TestItNow_exprResult_##__LINE__) { \
-			TestItNow_state.internals.result = ::std::unexpected( \
-				::TestItNow::TestFailureInfos{TestItNow_exprResult_##__LINE__.error()} \
-			); \
+			TestItNow_state.internals.errors.push_back(TestItNow_exprResult_##__LINE__.error()); \
+			TestItNow_state.internals.requirementNotFullfilled = true; \
 			return; \
 		} \
 		++TestItNow_state.internals.successCount; \
+	} while (false)
+
+#ifdef TestItNow_ASSERT
+	#error Macro TestItNow_ASSERT is used by TestItNow. It must not be defined
+	#include <stop_compilation>
+#endif
+#define TestItNow_ASSERT(...) do { \
+		++TestItNow_state.internals.testCount; \
+		auto TestItNow_exprResult_##__LINE__ {TestItNow_DESTRUCT_EXPR(__VA_ARGS__)}; \
+		if (!TestItNow_exprResult_##__LINE__) \
+			TestItNow_state.internals.errors.push_back(TestItNow_exprResult_##__LINE__.error()); \
+		else \
+			++TestItNow_state.internals.successCount; \
 	} while (false)

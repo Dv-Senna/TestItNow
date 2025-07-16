@@ -21,8 +21,18 @@ namespace TestItNow {
 		bool runAll;
 		[[=CLIser::Long("continue-on-failure"), =CLIser::Description("Run the next tests, even if one failed")]]
 		bool continueTestingOnFailure;
-		[[=CLIser::Long("seed"), =CLIser::Description("Set the random seed manually. Usefull to retest some values")]]
+		[[=CLIser::Long("seed"),
+			=CLIser::Description("Set the random seed manually. Usefull to retest s-ome random values")
+		]]
 		std::optional<std::uint32_t> randomSeed;
+	};
+
+
+	template <typename Func>
+	struct Janitor {
+		constexpr Janitor(Func&& func) noexcept : m_func {func} {}
+		constexpr ~Janitor() {m_func();}
+		Func m_func;
 	};
 }
 
@@ -80,11 +90,11 @@ auto main(int argc, char** argv) -> int {
 		std::println("\033[36mRunning test '\033[1;36m{}\033[36m'\033[m", test.getName());
 		std::println("\033[36m===============================\033[m");
 		std::expected testResult {test.run(randomSeed)};
+		TestItNow::Janitor _ {[](){std::println("\033[90m-------------------------------\033[m");}};
 		if (!testResult)
 			std::println(stderr, "\033[31mFailure: {}\033[m", testResult.error());
 		else
 			std::println("{}", *testResult);
-		std::println("\033[90m-------------------------------\033[m");
 	}
 
 	return EXIT_SUCCESS;

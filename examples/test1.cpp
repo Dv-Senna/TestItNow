@@ -8,10 +8,10 @@
 
 
 TestItNow_NEW_TEST(test1, "tag1", "tag2", "tag3") {
-	std::println("Test1 body");
-
-	const auto value {TestItNow_GENERATE(std::views::iota(0uz, 10uz))};
-	std::println("random value : {}", value);
+	const auto value {TestItNow_GENERATE(std::views::iota(0uz, 5uz))};
+	const auto value2 {TestItNow_GENERATE(std::views::iota(0uz, 2uz))};
+	std::println("random value   : {}", value);
+	std::println("random value 2 : {}", value2);
 
 	int a {10};
 	int b {10};
@@ -19,5 +19,4 @@ TestItNow_NEW_TEST(test1, "tag1", "tag2", "tag3") {
 	TestItNow_ASSERT(a == c);
 	TestItNow_REQUIRES(a == b);
 	TestItNow_ASSERT(a == c);
-	std::println("\033[34mEQUAL\033[m");
 }

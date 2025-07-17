@@ -59,6 +59,7 @@ namespace TestItNow {
  \
 		if (generatorPtr) \
 			return static_cast<Wrapper&> (*generatorPtr).getValue(); \
+		TestItNow_state.internals.generatorStackTop = *generatorIndex; \
 		generatorPtr = std::make_unique<Wrapper> (__VA_ARGS__); \
 		return static_cast<Wrapper&> (*generatorPtr).getValue(); \
 	} ()

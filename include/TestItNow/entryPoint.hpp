@@ -108,3 +108,89 @@ auto TestItNow::getTestList() noexcept -> std::vector<TestItNow::Test>& {
 	static std::vector<TestItNow::Test> testList {};
 	return testList;
 }
+
+
+auto TestItNow::Test::run(std::uint32_t randomSeed) const noexcept -> std::expected<std::string, std::string> {
+	try {
+		TestState state {
+			.randomSeed = randomSeed,
+			.internals = {
+				.currentRandomSeed = randomSeed,
+				.successCount = 0,
+				.testCount = 0,
+				.errors = {},
+				.requirementNotFullfilled = false,
+				.generators = {},
+				.generatorStackTop = 0
+			}
+		};
+
+		while (true) {
+			auto instantiationResult {this->m_testInstantiation(state)};
+			if (!instantiationResult)
+				return instantiationResult.error();
+			const auto& [endIteration, successMessage] {*instantiationResult};
+			if (!endIteration)
+				continue;
+			if (!successMessage.empty())
+				return successMessage;
+			break;
+		}
+
+		std::string output {std::format("\033[32m{}/{} tests succeeded\033[m",
+			state.internals.successCount,
+			state.internals.testCount
+		)};
+		return output;
+	}
+	catch (std::exception &exception) {
+		return std::unexpected(std::format("Uncaught exception thrown in test {} : {}",
+			m_name,
+			exception.what()
+		));
+	}
+	catch (...) {
+		return std::unexpected(std::format("Uncaught and unknown exception thrown in test {}", m_name));
+	}
+}
+
+
+auto TestItNow::Test::m_testInstantiation(TestState& state) const
+	-> std::expected<std::pair<bool, std::string>, std::string>
+{
+	m_callback(state);
+
+	if (state.internals.testCount == 0)
+		return std::pair{true, std::format("\033[33mYour test seems to be empty\033[m")};
+
+	if (state.internals.testCount != state.internals.successCount) {
+		std::ostringstream stream {};
+		for (std::string_view delim {""}; const auto& str : state.internals.errors) {
+			stream << delim << str;
+			delim = "\n\t";
+		}
+		if (!state.internals.requirementNotFullfilled) {
+			stream << std::format("\n{}/{} tests succeeded",
+				state.internals.successCount,
+				state.internals.testCount
+			);
+		}
+		return std::unexpected{stream.str()};
+	}
+
+	if (state.internals.generators.empty())
+		return std::pair{true, ""};
+
+	do {
+		state.internals.generators[state.internals.generatorStackTop]->advance();
+		if (!state.internals.generators[state.internals.generatorStackTop]->isEmpty())
+			break;
+
+		state.internals.generators[state.internals.generatorStackTop].reset();
+		if (state.internals.generatorStackTop == 0) {
+			return std::pair{true, ""};
+		}
+		--state.internals.generatorStackTop;
+	} while (!state.internals.generators[state.internals.generatorStackTop]->isEmpty());
+	return std::pair{false, ""};
+}

@@ -3,21 +3,24 @@
 #include <exception>
 #include <expected>
 #include <format>
-#include <ranges>
+#include <memory>
 #include <sstream>
 #include <string_view>
-#include <type_traits>
 #include <vector>
+
+#include "TestItNow/generator.hpp"
 
 
 namespace TestItNow {
 	struct TestState {
 		const std::uint32_t randomSeed;
 		struct {
+			std::uint32_t currentRandomSeed;
 			std::uint32_t successCount;
 			std::uint32_t testCount;
 			std::vector<std::string> errors {};
 			bool requirementNotFullfilled;
+			std::vector<std::unique_ptr<TestItNow::BasicGeneratorWrapper>> generators;
 		} internals;
 	};
 
@@ -43,26 +46,43 @@ namespace TestItNow {
 				try {
 					TestState state {
 						.randomSeed = randomSeed,
-						.internals = {}
+						.internals = {
+							.currentRandomSeed = randomSeed,
+							.successCount = 0,
+							.testCount = 0,
+							.errors = {},
+							.requirementNotFullfilled = false,
+							.generators = {}
+						}
 					};
-					m_callback(state);
 
-					if (state.internals.testCount == 0)
-						return std::format("\033[33mYour test seems to be empty\033[m");
+					while (true) {
+						m_callback(state);
 
-					if (state.internals.testCount != state.internals.successCount) {
-						std::ostringstream stream {};
-						for (std::string_view delim {""}; const auto& str : state.internals.errors) {
-							stream << delim << str;
-							delim = "\n\t";
+						if (state.internals.testCount == 0)
+							return std::format("\033[33mYour test seems to be empty\033[m");
+
+						if (state.internals.testCount != state.internals.successCount) {
+							std::ostringstream stream {};
+							for (std::string_view delim {""}; const auto& str : state.internals.errors) {
+								stream << delim << str;
+								delim = "\n\t";
+							}
+							if (!state.internals.requirementNotFullfilled) {
+								stream << std::format("\n{}/{} tests succeeded",
+									state.internals.successCount,
+									state.internals.testCount
+								);
+							}
+							return std::unexpected{stream.str()};
 						}
-						if (!state.internals.requirementNotFullfilled) {
-							stream << std::format("\n{}/{} tests succeeded",
-								state.internals.successCount,
-								state.internals.testCount
-							);
-						}
-						return std::unexpected{stream.str()};
+
+						if (state.internals.generators.empty())
+							break;
+
+						state.internals.generators[0]->advance();
+						if (state.internals.generators[0]->isEmpty())
+							break;
 					}
 
 					std::string output {std::format("\033[32m{}/{} tests succeeded\033[m",

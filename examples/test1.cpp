@@ -4,10 +4,14 @@
 #include <TestItNow/test.hpp>
 #include <TestItNow/testRegister.hpp>
 #include <TestItNow/macros.hpp>
+#include <TestItNow/generator.hpp>
 
 
 TestItNow_NEW_TEST(test1, "tag1", "tag2", "tag3") {
 	std::println("Test1 body");
+
+	const auto value {TestItNow_GENERATE(std::views::iota(0uz, 10uz))};
+	std::println("random value : {}", value);
 
 	int a {10};
 	int b {10};

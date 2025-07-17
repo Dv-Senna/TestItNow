@@ -59,4 +59,14 @@ namespace TestItNow {
 
 
 	auto getTestList() noexcept -> std::vector<Test>&;
+
+	namespace generators {
+		template <typename Distribution>
+		Random<Distribution>::Random(TestItNow::TestState& state, auto&&... args) :
+			m_distribution {std::forward<decltype(args)> (args)...},
+			m_engine {state.internals.currentRandomSeed}
+		{
+			state.internals.currentRandomSeed = std::mt19937{state.internals.currentRandomSeed}();
+		}
+	}
 }

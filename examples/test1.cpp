@@ -8,10 +8,10 @@
 
 
 TestItNow_NEW_TEST(test1, "tag1", "tag2", "tag3") {
-	const auto value {TestItNow_GENERATE(std::views::iota(0uz, 5uz))};
-	const auto value2 {TestItNow_GENERATE(std::views::iota(0uz, 2uz))};
+	const auto value {TestItNow_GENERATE(TestItNow::generators::uniform_random(TestItNow_state, 0u, 10u)
+		| std::views::take(16uz)
+	)};
 	std::println("random value   : {}", value);
-	std::println("random value 2 : {}", value2);
 
 	int a {10};
 	int b {10};
